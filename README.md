@@ -4,9 +4,10 @@
 
 ## **Overview**
 
-This assessment evaluates your ability to deliver a production-grade internal platform that orchestrates multiple machine learning endpoints through Kubernetes.  You've spent the last four weeks building SageMaker models, wrapping them in FastAPI services, containerizing those services, deploying them to Kubernetes, and automating that deployment with GitHub Actions.  Now you're going to bring all of that together into a single cohesive system.
+This assessment evaluates your ability to deliver internal platform tooling that orchestrates multiple machine learning endpoints using Kubernetes.  You've spent the last four weeks building SageMaker models, wrapping them in FastAPI services, containerizing those services and deploying them to Kubernetes.  Now you'll be combining all of the above with everything you've learned in the previous modules to put together a single cohesive system, demonstrating all you've learned about AWS, Terraform, Github Actions, Sagemaker and Kubernetes.
 
-You are not building a random demo.  You are building internal tooling that a platform engineering team would actually deliver to support multiple business units running different ML workloads.  The system should feel like a real internal surface — something a team lead could open in a browser and immediately understand which models are running, which teams own them, and whether anything needs attention.
+## **Context**
+You are building internal tooling that a platform engineering team would actually deliver to support multiple business units running different ML workloads.  The system should feel like a real internal surface — something a team lead could open in a browser and immediately understand which models are running, which teams own them, and whether anything needs attention.
 
 To do this, you'll need to bring together Kubernetes orchestration on EKS, SageMaker endpoint management, Terraform infrastructure provisioning, GitHub Actions CI/CD, and a lightweight React dashboard that ties the whole thing together with operational visibility.
 
