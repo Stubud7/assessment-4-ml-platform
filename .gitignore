@@ -1,9 +1,108 @@
+# Environment & Secrets (DO NOT COMMIT)
 .env
+.env.*
+!.env.example
 secrets.sh
-node_modules/
+*.pem
+*.key
+kubeconfig*
+*.crt
+
+# Python
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Node / React / Vite
+node_modules/
+.npm/
+dist/
+build/
+.cache/
+.parcel-cache/
+.vite/
+*.tsbuildinfo
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Terraform
 .terraform/
 *.tfstate
-*.tfstate.backup
+*.tfstate.*
 .terraform.lock.hcl
+*.tfvars
+!terraform.tfvars.example
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Kubernetes
+kubeconfig
+*.kubeconfig
+
+# Logs
+*.log
+logs/
+*.out
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE & Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.hypothesis/
+
+# Misc
+.cache/
+tmp/
+temp/
+*.bak
+*.tmp
+
+getting_started.md
+README.md

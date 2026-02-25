@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: anomaly-detector
+  namespace: team-anomaly
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: anomaly-detector
+  template:
+    metadata:
+      labels:
+        app: anomaly-detector
+        team: anomaly
+    spec:
+      containers:
+        - name: anomaly-detector
+          image: ghcr.io/czarnick89/anomaly-detector:latest
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: anomaly-detector-config
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+      imagePullSecrets:
+        - name: ghcr-secret

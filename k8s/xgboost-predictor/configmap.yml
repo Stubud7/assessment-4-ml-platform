@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: xgboost-predictor-config
+  namespace: team-xgboost
+data:
+  ENDPOINT_NAME: "xgboost-predictor-endpoint"
+  AWS_REGION: "us-east-1"
+  LOG_LEVEL: "info"
+  MOCK_MODE: "true"
+  MODEL_VERSION: "v1.0"
