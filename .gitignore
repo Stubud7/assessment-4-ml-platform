@@ -103,3 +103,6 @@ tmp/
 temp/
 *.bak
 *.tmp
+
+getting_started.md
+README.md
