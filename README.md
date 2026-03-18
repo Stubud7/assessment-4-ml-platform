@@ -26,7 +26,7 @@ We can outline these objectives to give you an idea of what will be scored.
 
 ## **Exam Outline**
 
-**1. Terraform Infrastructure as Code (20%)**
+**1. Terraform Infrastructure as Code (10%)**
 
 1. Provision cloud resources through Terraform
 2. Use variables, outputs, and proper state management — no hardcoded credentials
@@ -34,7 +34,7 @@ We can outline these objectives to give you an idea of what will be scored.
 4. Bonus: Remote state with S3/DynamoDB locking
 5. Bonus: Terraform-managed Kubernetes resources (namespaces, RBAC, ConfigMaps) via the Kubernetes provider
 
-**2. Kubernetes Orchestration Quality (25%)**
+**2. Kubernetes Orchestration Quality (30%)**
 
 1. Deploy to EKS with namespace separation per team
 2. ConfigMaps for non-sensitive config (endpoint names, regions, log levels); Secrets for credentials (AWS keys, registry tokens)
@@ -42,12 +42,11 @@ We can outline these objectives to give you an idea of what will be scored.
 4. ResourceQuota and LimitRange per namespace
 5. Bonus: controlled failure scenario (probe restart, quota rejection, readiness-gated traffic)
 
-**3. Multi-Endpoint SageMaker Integration (20%)**
+**3. Multi-Endpoint SageMaker Integration (25%)**
 
-1. At least two SageMaker endpoints through the platform (three for full credit)
+1. Three SageMaker endpoints through the platform with explicit routing (request to the fraud endpoint returns fraud predictions, not recommendations)
 2. Each wrapped in a FastAPI service with `/health`, `/ready`, `/predict`
-3. Routing must be explicit — a request to the fraud endpoint returns fraud predictions, not recommendations
-4. Handle at least one failure path (timeout, fallback, error propagation)
+3. Handles at least one failure path (timeout, fallback, error propagation)
 5. Bonus: an additional gateway service that acts as a single entry point, proxying requests to each team's individual service so consumers don't need to know three separate URLs
 6. Bonus: model versioning and A/B routing
 
@@ -62,18 +61,17 @@ We can outline these objectives to give you an idea of what will be scored.
 
 **5. Internal Operations UI — React Dashboard (10%)**
 
-1. A simple web dashboard that shows which services are deployed, their health status, and which team owns each
-2. Serves as internal ops tool, not a consumer app
-3. Should demonstrate atleast two of the following: live polling, version display, request counts, or a test-request interface
-4. Bonus: Utilizes framework like Fast API, Flask or React
-5. Bonus: clean styling (Tailwind, MUI, Streamlit, or similar)
+1. A simple web dashboard that shows which services are deployed, their health status, and which team owns each (Designed to serve as internal ops tool, not a consumer app)
+2. Should demonstrate atleast two of the following: live polling, version display, request counts, or a test-request interface
+3. Bonus: UI utilizes framework like Fast API, Flask or React
+4. Bonus: clean styling (Tailwind, MUI, Streamlit, or similar)
 
 **6. Documentation & Presentation Quality (10%)**
 
 1. Setup and config steps clear enough for someone else to reproduce
 2. At least one architecture diagram (cluster, endpoints, CI/CD, dashboard)
 3. Present and answer questions about design decisions
-4. Clean GitHub repo structure
+4. Clean GitHub repo structure with documentation
 5. Bonus: present early; points deducted for late
 6. Bonus: helper scripts (secrets config, env scaffolding, local dev bootstrap)
 
