@@ -37,9 +37,6 @@ DASHBOARD_PORT=$(find_available_port 3000)
 [ "$BACKEND_PORT" != "8000" ] && echo "Port 8000 in use, using $BACKEND_PORT"
 [ "$DASHBOARD_PORT" != "3000" ] && echo "Port 3000 in use, using $DASHBOARD_PORT"
 
-echo "Get EKS cluster name"
-EKS_CLUSTER="$(terraform output -raw eks_cluster_name)"
-
 if [ ! -f .env ]; then
     cat > .env << EOF
 AWS_REGION=us-east-1
@@ -49,7 +46,6 @@ DASHBOARD_PORT=$DASHBOARD_PORT
 TF_VAR_project_name=ml-platform
 TF_VAR_environment=dev
 TF_VAR_aws_region=us-east-1
-EKS_CLUSTER=$EKS_CLUSTER
 EOF
     echo "Created .env"
 else
@@ -60,7 +56,6 @@ if [ ! -f .env.secrets ]; then
     cat > .env.secrets << EOF
 # AWS_ACCESS_KEY_ID=
 # AWS_SECRET_ACCESS_KEY=
-# GHCR_TOKEN=
 EOF
     echo "Created .env.secrets"
 else

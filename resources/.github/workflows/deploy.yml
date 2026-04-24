@@ -3,185 +3,39 @@ name: Build and Deploy
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch: # Manual trigger for demonstration
 
 env:
   AWS_REGION: us-east-1
-  EKS_CLUSTER: class-eks-cluster # TODO: Review and also make sure it is correct
-  IMAGE_NAME: sagemaker-service
-  GH_USER: ${{ github.repository_owner }}
+  EKS_CLUSTER: <class-cluster-name>
 
 jobs:
-  lint-and-test:
-    name: Lint and Test
-    if: github.event_name == 'pull_request'
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
         with:
-          python-version: "3.11"
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
 
-      - name: Install dependencies
-        id: install-dep
-        run: |
-          python -m pip install --upgrade pip
-          pip install yamllint pytest
-          if [ -f resources/services/main/requirements.txt ]; then pip install -r resources/services/main/requirements.txt; fi
-
-      - name: Lint Kubernetes Manifests
-        id: kubelint
-        run: yamllint ./resources/k8s/config/
-
-      - name: Confirm on test success
-        if: steps.kubelint.outcome == 'success'
-        run: echo "Kubernetes Lint ran successfully"
-
-      - name: Run Unit Tests
-        id: pytests
-        # TODO: create explicit pytest file?
-        run: pytest ./resources/services/main/
-
-      - name: Confirm on test success
-        if: steps.pytests.outcome == 'success'
-        run: echo "Pytests ran successfully"
-
-  # Job builds and pushes the container image
-  build:
-    name: Build and Push Image
-    # Job only runs on a push to the main branch
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write # Required to push to GHCR
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Login to GitHub Container Registry
+      - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ env.GH_USER }}
+          username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      - name: Build and push Docker image
-        id: build-push
-        uses: docker/build-push-action@v5
-        with:
-          context: ./resources/services/main 
-          push: true
-          tags: ghcr.io/${{ env.GH_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
-
-      - name: Build confirm 
-        if: success()
-        run: echo "Build and push to Docker was successful"
-
-  # Job deploys the application to EKS
-  deploy:
-    name: Deploy to EKS
-    needs: build # build completes first
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-      #  - name: Login to GHCR
-      # uses: docker/login-action@v3
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
-
-      - name: Update image tag in Kubernetes manifests
-        run: |
-          IMAGE_TAG="ghcr.io/${{ env.GH_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
-          echo "Updating image in deployment files to $IMAGE_TAG"
-          # This command finds all deployment files and replaces the image line with the newly built tag
-          find ./resources/k8s/config -type f -name "*deployment.yml" -exec sed -i "s|image: .*|image: $IMAGE_TAG|g" {} +
-
-      - name: Deploy all manifests to EKS
-        run: kubectl apply -f ./resources/k8s/config/
-
-      - name: Get the documentation for pod manifests
-        run: kubectl explain pods
-
-  # Job verifies that the deployment was successful
-  verify:
-    name: Verify Deployment
-    needs: deploy
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+      # -- Add build + push steps per service here --
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
 
-      - name: Verify application rollout status
-        run: |
-          echo "Verifying deployments..."
-          kubectl rollout status deployment/* --timeout=2m
-          # kubectl rollout status deployment/fraud-team -n fraud-detection --timeout=2m
-          # kubectl rollout status deployment/recommendation-team -n recommendations --timeout=2m
-          # kubectl rollout status deployment/financial-services -n financial-service --timeout=2m
-          echo "All deployments rolled out successfully!"
-
-      - name: Check history of deployments
-        run: |
-          echo "Print deployment history..."
-          kubectl rollout history deployment/*
-
-      - name: List all services in the namespace
-        run: |
-          echo "Kubernetes Services..."
-          kubectl get services
+      # -- Add kubectl apply steps per team here --
 
       - name: Verify rollout
         run: |
-          echo "Listing pods in namespaces..."
-          kubectl get pods --all-namespaces 
-          # kubectl get pods -n fraud-detection
-          # kubectl get pods -n recommendations
-          # kubectl get pods -n financial-service
-
-  
-  rollback:
-    name: Rollback on Failure
-    needs: verify
-    if: failure() 
-    runs-on: ubuntu-latest
-    steps:
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
-
-      - name: Rollback deployments
-        run: |
-          echo "Verification failed. Rolling back deployments to previous version..."
-          kubectl rollout undo deployment/* 
-          # kubectl rollout undo deployment/fraud-team -n fraud-detection
-          # kubectl rollout undo deployment/recommendation-team -n recommendations
-          # kubectl rollout undo deployment/financial-services -n financial-service
+          echo "Add rollout status checks here"
+          # kubectl rollout status deployment/example-service -n team-example
