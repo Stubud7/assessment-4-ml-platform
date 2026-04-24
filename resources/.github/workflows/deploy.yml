@@ -14,16 +14,6 @@ env:
   GH_USER: ${{ github.repository_owner }}
 
 jobs:
-  debug:
-    name: debug
-    runs-on: ubuntu-latest
-    steps:
-      - name: Print env secrets
-        run: |
-          echo Debug Print Env Secrets
-          Access Key ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          Secret Key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          Region: ${{ env.AWS_REGION }}
   lint-and-test:
     name: Lint and Test
     if: github.event_name == 'pull_request'
@@ -119,7 +109,7 @@ jobs:
           IMAGE_TAG="ghcr.io/${{ env.GH_USER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}"
           echo "Updating image in deployment files to $IMAGE_TAG"
           # This command finds all deployment files and replaces the image line with the newly built tag
-          find ./resources/k8s/config -type f -name "*deployment.yaml" -exec sed -i "s|image: .*|image: $IMAGE_TAG|g" {} +
+          find ./resources/k8s/config -type f -name "*deployment.yml" -exec sed -i "s|image: .*|image: $IMAGE_TAG|g" {} +
 
       - name: Deploy all manifests to EKS
         run: kubectl apply -f ./resources/k8s/config/

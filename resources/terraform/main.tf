@@ -45,7 +45,6 @@ provider "kubernetes" {
   host                   = aws_eks_cluster.eks_cluster_okl.endpoint
   cluster_ca_certificate = base64decode(aws_eks_cluster.eks_cluster_okl.certificate_authority[0].data)
 
-
   exec {
     api_version = "client.authentication.k8s.io/v1"
     command     = "aws"
@@ -53,7 +52,6 @@ provider "kubernetes" {
   }
   # config_path = "~/.kube/config"
   # config_context = "arn:aws:eks:us-east-1:388691194728:cluster/eks-j3v6tjjj-okl"
-
 }
 
 # Force provider to wait until cluster exists
@@ -666,11 +664,6 @@ variable "vpc_config" {
   }]
 }
 
-variable "aws_cluster_name" {
-  type    = string
-  default = null
-}
-
 # Passed from config.auto.tfvars which is included in .gitignore file 
 variable "aws_access_key_id" {
   description = "AWS access id key for account"
@@ -710,7 +703,6 @@ locals {
   prefix                       = "okl"
   cloud_bucket                 = var.cloud_bucket
   bucket_iam_arn               = aws_iam_role.iam_sage_okl.arn
-  aws_cluster_name             = "eks-j3v6tjjj-okl"
   production_variants_indexed = flatten([
     for prod_variant in var.production_variants : [
       for model_key, model_resource in aws_sagemaker_model.sagemodel_okl :
@@ -789,7 +781,6 @@ locals {
     for i in range(length(var.sage_subnets)) :
      var.sage_subnets[i] => merge(    
       {subnet_cidr = var.sage_subnets[i]},
-      {security_group = aws_security_group.eks_cluster_sg},
       {vpc_config = var.vpc_config }
     )
   }
@@ -1126,28 +1117,8 @@ resource "aws_subnet" "sage_subnets" {
   availability_zone       = var.azs[count.index]
   map_public_ip_on_launch = true
 
-  tags = { Name = "${var.prefix}-sage-sb-${count.index + 1}"
-    "kubernetes.io/cluster/${local.aws_cluster_name}" = "shared"
-    "kubernetes.io/role/elb" = "1" }
+  tags = { Name = "${var.prefix}-sage-sb-${count.index + 1}" }
 }
-
-resource "aws_security_group" "eks_cluster_sg" {
-  name        = "eks-cluster-sg"
-  description = "EKS cluster security group"
-  vpc_id      = aws_vpc.sage_vpc.id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "eks-cluster-sg"
-  }
-}
-
 
 data "aws_sagemaker_prebuilt_ecr_image" "ecr_image" {
   for_each        = { for item in local.project_teams : item.team => item }
@@ -1671,74 +1642,28 @@ resource "kubernetes_config_map_v1" "app_config" {
   ]
 }
 
-resource "kubernetes_secret" "aws_credentials" {
-  for_each = { for item in local.project_teams : item.team => item }
-
-  metadata {
-    name      = "aws-credentials"
-    namespace = each.value.config.kubernetes_namespace
-  }
-
+# resource "kubernetes_secret" "aws_credentials" {
+  # for_each = { for item in local.project_teams : item.team => item }
+# 
+  # metadata {
+    # name      = "aws-credentials"
+    # namespace = each.value.config.kubernetes_namespace
+  # }
+# 
   # Use variables to pass in secrets, not hardcoded values
-  data = {
-    aws_access_key_id     = var.aws_access_key_id
-    aws_secret_access_key = var.aws_secret_access_key
-  }
-
-  type = "Opaque"
-
-  depends_on = [
-    kubernetes_namespace_v1.kube_ns_okl,
-    aws_eks_cluster.eks_cluster_okl,
-    aws_eks_access_policy_association.eks_policy
-  ]
-}
-
-resource "aws_eks_node_group" "eks_node_group_okl" {
-  cluster_name    = aws_eks_cluster.eks_cluster_okl.name
-  node_group_name = "okl-nodegroup"
-  node_role_arn   = aws_iam_role.node_role.arn
-  subnet_ids      = aws_subnet.sage_subnets[*].id
-
-  scaling_config {
-    desired_size = 2
-    max_size     = 3
-    min_size     = 1
-  }
-
-  instance_types = ["t2.medium"]
-}
-
-resource "aws_iam_role" "node_role" {
-  name = "eks-nodegroup-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      }
-      Action = "sts:AssumeRole"
-    }]
-  })
-}
-
-resource "aws_iam_role_policy_attachment" "node_AmazonEKSWorkerNodePolicy" {
-  role       = aws_iam_role.node_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
-}
-
-resource "aws_iam_role_policy_attachment" "node_AmazonEC2ContainerRegistryReadOnly" {
-  role       = aws_iam_role.node_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
-}
-
-resource "aws_iam_role_policy_attachment" "node_AmazonEKS_CNI_Policy" {
-  role       = aws_iam_role.node_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
-}
-
+  # data = {
+    # aws_access_key_id     = var.aws_access_key_id
+    # aws_secret_access_key = var.aws_secret_access_key
+  # }
+# 
+  # type = "Opaque"
+# 
+  # depends_on = [
+    # kubernetes_namespace_v1.kube_ns_okl,
+    # aws_eks_cluster.eks_cluster_okl,
+    # aws_eks_access_policy_association.eks_policy
+  # ]
+# }
 
 ##### EKS Cluster #####
 
@@ -1938,7 +1863,7 @@ resource "aws_eks_cluster" "eks_cluster_okl" {
     endpoint_private_access = one(var.vpc_config).endpoint_private_access
     endpoint_public_access  = one(var.vpc_config).endpoint_public_access
     public_access_cidrs     = one(var.vpc_config).public_access_cidrs
-    security_group_ids      = [aws_security_group.eks_cluster_sg.id]
+    security_group_ids      = one(var.vpc_config).security_group_ids
     subnet_ids              = aws_subnet.sage_subnets[*].id
   }
 }
