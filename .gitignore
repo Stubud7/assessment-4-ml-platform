@@ -1,9 +1,11 @@
-.env
-secrets.sh
 node_modules/
-__pycache__/
-*.pyc
-.terraform/
+dist/
+.env
+.env.secrets
 *.tfstate
 *.tfstate.backup
-.terraform.lock.hcl
+.terraform/
+__pycache__/
+*.pyc
+.venv/
+venv/
