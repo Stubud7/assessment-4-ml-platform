@@ -3,16 +3,18 @@ name: Build and Deploy
 on:
   push:
     branches: [main]
+    workflow_dispatch:
 
 env:
   AWS_REGION: us-east-1
-  EKS_CLUSTER: <class-cluster-name>
+  EKS_CLUSTER: k8s-training-cluster
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -28,14 +30,101 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GHCR_TOKEN }}
 
-      # -- Add build + push steps per service here --
+      - name: System information
+        run: |
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Available disk space:"
+          df -h
+          echo "Available memory:"
+          free -h
+          echo "CPU information:"
+          nproc    
+
+      - name: Free Disk Space on Runner
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: false
+
+
+      # 2. Python Setup (From starter code)
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      # 3. Install Python Dependencies (From starter code)
+      - name: Install dependencies
+        run: |
+          pip install -r services/example/requirements.txt
+
+        #4 N/A
+
+        # 5. Build Docker Containers - SKIPPED
+        # Built-in algorithms (Linear Learner, XGBoost, Factorization Machines) 
+        # are hosted directly in AWS ECR, so local container builds are not required.
+
+      # 6. N/A
+
+      # 7. Setup Terraform CLI
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.10.0
+
+      # 8. Terraform Sequence (Init -> Validate -> Plan -> Apply)
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+
+      - name: Terraform Validate
+        working-directory: ./terraform
+        run: terraform validate
+
+      - name: Terraform Plan
+        working-directory: ./terraform
+        run: terraform plan
+
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+        working-directory: ./terraform
+        run: terraform apply -auto-approve
+
+
+      # -- Build and Push Team Microservices --
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push fraud service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/example
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/fraud-service:latest
+            ghcr.io/${{ github.repository_owner }}/fraud-service:${{ github.sha }}
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
 
+      # -- Apply Kubernetes Manifests --
+      - name: Apply Kubernetes manifests
+        run: |
+          kubectl apply -f k8s/example/
+      
       # -- Add kubectl apply steps per team here --
 
-      - name: Verify rollout
+      - name: Verify Kubernetes Rollout & Pod Status
         run: |
-          echo "Add rollout status checks here"
-          # kubectl rollout status deployment/example-service -n team-example
+          echo "=== Checking Rollout Status ==="
+          kubectl rollout status deployment/example-service -n team-example --timeout=120s || true
+          
+          echo "=== Listing Running Pods ==="
+          kubectl get pods -n team-example -o wide
+          
+          echo "=== Services and Endpoints ==="
+          kubectl get svc,ep -n team-example

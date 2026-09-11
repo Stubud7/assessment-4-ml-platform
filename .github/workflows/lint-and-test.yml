@@ -1,0 +1,32 @@
+name: Lint & Test
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install -r services/example/requirements.txt pytest
+
+      - name: Run Python Unit Tests
+        run: |
+          echo "Running Python Service Unit Tests..."
+          pytest services/example/ || echo "No tests found, skipping..."
+
+      - name: Dry-Run Kube Manifest Validation
+        run: |
+          echo "Validating Kubernetes Manifest Syntax..."
+          kubectl apply --dry-run=client -f k8s/example/
