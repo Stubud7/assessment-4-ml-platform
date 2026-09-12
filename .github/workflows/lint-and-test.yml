@@ -30,9 +30,4 @@ jobs:
         run: |
           echo "Validating Kubernetes Manifest Syntax..."
           pip install pyyaml
-          python -c "
-          import yaml, glob
-          for path in glob.glob('k8s/**/*.yml', recursive=True) + glob.glob('k8s/**/*.yaml', recursive=True):
-              with open(path, 'r') as f:
-                  list(yaml.safe_load_all(f))
-              print(f'Valid YAML: {path}')
+          python -c "import yaml, glob; [list(yaml.safe_load_all(open(f))) for f in glob.glob('k8s/**/*.yml', recursive=True) + glob.glob('k8s/**/*.yaml', recursive=True)]"
