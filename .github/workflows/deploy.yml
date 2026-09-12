@@ -105,8 +105,8 @@ jobs:
           context: ./services/example
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/fraud-service:latest
-            ghcr.io/${{ github.repository_owner }}/fraud-service:${{ github.sha }}
+            ghcr.io/stubud7/fraud-service:latest
+            ghcr.io/stubud7/fraud-service:${{ github.sha }}
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
