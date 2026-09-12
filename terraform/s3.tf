@@ -52,7 +52,7 @@ resource "aws_s3_bucket_policy" "allow_public_read" {
 # 2. SAGEMAKER / ML MODEL ARTIFACTS BUCKET
 resource "aws_s3_bucket" "model_artifacts" {
   bucket        = var.model_artifacts_bucket_name
-  force_destroy = false
+  force_destroy = true
 
   tags = {
     Name = var.model_artifacts_bucket_name
