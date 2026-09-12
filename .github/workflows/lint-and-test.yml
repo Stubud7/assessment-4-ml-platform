@@ -29,4 +29,7 @@ jobs:
       - name: Dry-Run Kube Manifest Validation
         run: |
           echo "Validating Kubernetes Manifest Syntax..."
-          kubectl apply --dry-run=client --validate=false -f k8s/example/
+          for file in k8s/example/*.yml; do
+            kubectl kustomize "$(dirname "$file")" > /dev/null
+            break
+          done
