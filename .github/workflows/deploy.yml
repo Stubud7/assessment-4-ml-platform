@@ -99,22 +99,77 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build and push fraud service
+      # 1. Fraud Service
+      - name: Build and push Fraud Service
         uses: docker/build-push-action@v5
         with:
-          context: ./services/example
+          context: ./services/fraud
           push: true
           tags: |
-            ghcr.io/stubud7/fraud-service:latest
-            ghcr.io/stubud7/fraud-service:${{ github.sha }}
+            ghcr.io/${{ github.actor }}/fraud-service:latest
+            ghcr.io/${{ github.actor }}/fraud-service:${{ github.sha }}
+
+      # 2. Recommendations Service
+      - name: Build and push Recommendations Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/recommendations
+          push: true
+          tags: |
+            ghcr.io/${{ github.actor }}/recommendations-service:latest
+            ghcr.io/${{ github.actor }}/recommendations-service:${{ github.sha }}
+
+      # 3. Forecasting Service
+      - name: Build and push Forecasting Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/forecasting
+          push: true
+          tags: |
+            ghcr.io/${{ github.actor }}/forecasting-service:latest
+            ghcr.io/${{ github.actor }}/forecasting-service:${{ github.sha }}
+
+      # 4. Gateway Service (Bonus)
+      - name: Build and push Gateway Service
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/gateway
+          push: true
+          tags: |
+            ghcr.io/${{ github.actor }}/gateway-service:latest
+            ghcr.io/${{ github.actor }}/gateway-service:${{ github.sha }}
 
       - name: Update kubeconfig
         run: aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name ${{ env.EKS_CLUSTER }}
 
+      - name: Inject Kubernetes Secrets into Team Namespaces
+        run: |
+          TEAMS=("team-fraud-detection" "team-recommendations" "team-forecasting")
+
+          for ns in "${TEAMS[@]}"; do
+            echo "Applying secrets to namespace: $ns"
+
+            # 1. Inject GHCR Image Pull Secret
+            kubectl create secret docker-registry ghcr-secret \
+              --namespace="$ns" \
+              --docker-server=ghcr.io \
+              --docker-username="${{ github.actor }}" | tr '[:upper:]' '[:lower:]'
+              --docker-password="${{ secrets.GHCR_TOKEN }}" \
+              --dry-run=client -o yaml | kubectl apply -f -
+
+            # 2. Inject AWS Credentials Secret
+            kubectl create secret generic team-aws-credentials \
+              --namespace="$ns" \
+              --from-literal=AWS_ACCESS_KEY_ID="${{ secrets.AWS_ACCESS_KEY_ID }}" \
+              --from-literal=AWS_SECRET_ACCESS_KEY="${{ secrets.AWS_SECRET_ACCESS_KEY }}" \
+              --dry-run=client -o yaml | kubectl apply -f -
+          done
+
+
       # -- Apply Kubernetes Manifests --
       - name: Apply Kubernetes manifests
         run: |
-          kubectl apply -f k8s/example/
+          kubectl apply -f k8s/ -R
       
       # -- Add kubectl apply steps per team here --
 

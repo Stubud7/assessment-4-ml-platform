@@ -88,6 +88,6 @@ data "aws_iam_policy_document" "sagemaker_s3_policy" {
 # Attach Policy to SageMaker Role
 resource "aws_iam_role_policy" "sagemaker_s3_inline_policy" {
   name   = "sagemaker-s3-artifacts-policy"
-  role   = aws_iam_role.sagemaker_execution_role.id  
+  role   = aws_iam_role.sagemaker_execution_role.id
   policy = data.aws_iam_policy_document.sagemaker_s3_policy.json
 }

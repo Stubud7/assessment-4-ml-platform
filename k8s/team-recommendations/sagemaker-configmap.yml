@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sagemaker-config # Use sagemaker-config so the Pod can reference this ConfigMap by name.
+  namespace: team-recommendations  # Use team-recommendations so the ConfigMap lives with the app workload.
+data:
+  ENDPOINT_NAME: "stuart-assessment4-recommendations-endpoint"   
+  AWS_REGION: "us-east-1"  # Use us-east-1 unless your instructor gives you a different Region.
+  LOG_LEVEL: "info"  # Use info for normal runtime logging.

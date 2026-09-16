@@ -22,12 +22,28 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Project     = var.stuart_assessment4
+      Project     = var.project_name
       Environment = var.environment
       ManagedBy   = "terraform"
     }
   }
 }
+
+# Look up the existing EKS cluster
+data "aws_eks_cluster" "existing" {
+  name = var.cluster_name
+}
+
+# Look up authentication credentials for the existing EKS cluster
+data "aws_eks_cluster_auth" "existing" {
+  name = var.cluster_name
+}
+provider "kubernetes" {
+  host                   = data.aws_eks_cluster.existing.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.existing.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.existing.token
+}
+
 
 output "region" {
   value = var.aws_region
@@ -38,16 +54,16 @@ output "project_name" {
 }
 
 # SageMaker Team Endpoints Summary
-# output "sagemaker_team_endpoints" {
-#   description = "Mapping of team names to their respective SageMaker endpoint names and ARNs"
-#   value = {
-#     for team_key, endpoint in aws_sagemaker_endpoint.team_endpoints : team_key => {
-#       team_name     = local.teams[team_key].team_name
-#       endpoint_name = endpoint.name
-#       endpoint_arn  = endpoint.arn
-#     }
-#   }
-# }
+output "sagemaker_team_endpoints" {
+  description = "Mapping of team names to their respective SageMaker endpoint names and ARNs"
+  value = {
+    for team_key, endpoint in aws_sagemaker_endpoint.team_endpoints : team_key => {
+      team_name     = local.teams[team_key].team_name
+      endpoint_name = endpoint.name
+      endpoint_arn  = endpoint.arn
+      }
+    }
+}
 
 # EC2 Backend Instance Public IP (for calling the FastAPI services)
 output "backend_public_ip" {

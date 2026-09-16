@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: forecasting-service
+  namespace: team-forecasting
+spec:
+  type: LoadBalancer
+  selector:
+    app: forecasting-service
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8000

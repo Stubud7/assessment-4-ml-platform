@@ -1,4 +1,4 @@
 fastapi
 uvicorn
-boto3
+httpx
 pydantic

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: team-recommendations-defaults # Use team-recommendations-defaults to describe the default resource policy.
+  namespace: team-recommendations  # Use team-recommendations so these defaults apply inside the lab namespace.
+spec:
+  limits:
+    - type: Container  # Applies these defaults to each container created in the namespace.
+      defaultRequest:
+        cpu: 100m  # Use 100m as the CPU request when a pod omits one.
+        memory: 128Mi  # Use 128Mi as the memory request when a pod omits one.
+      default:
+        cpu: 500m  # Use 500m as the CPU limit when a pod omits one.
+        memory: 512Mi  # Use 512Mi as the memory limit when a pod omits one.

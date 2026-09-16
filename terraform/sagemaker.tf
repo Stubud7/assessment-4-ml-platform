@@ -14,12 +14,12 @@ locals {
       model_path = "s3://${aws_s3_bucket.model_artifacts.bucket}/recommendations/model.tar.gz"
     }
     forecasting = {
-      team_name  = "forecasting"
+      team_name = "forecasting"
       # Standard SageMaker Linear Learner Image (us-east-1 example)
       image_uri  = "382416733822.dkr.ecr.us-east-1.amazonaws.com/linear-learner:1"
       model_path = "s3://${aws_s3_bucket.model_artifacts.bucket}/forecasting/model.tar.gz"
     }
- }
+  }
 }
 
 # 1. Create SageMaker Models for all 3 teams
@@ -58,13 +58,13 @@ resource "aws_sagemaker_endpoint_configuration" "team_configs" {
 }
 
 # 3. Provision 3 Live Real-Time SageMaker Endpoints
-# resource "aws_sagemaker_endpoint" "team_endpoints" {
-#   for_each             = local.teams
-#   name                 = "${var.stuart_assessment4}-${each.value.team_name}-endpoint"
-#   endpoint_config_name = aws_sagemaker_endpoint_configuration.team_configs[each.key].name
+  resource "aws_sagemaker_endpoint" "team_endpoints" {
+    for_each             = local.teams
+    name                 = "${var.stuart_assessment4}-${each.value.team_name}-endpoint"
+    endpoint_config_name = aws_sagemaker_endpoint_configuration.team_configs[each.key].name
 
-#   tags = {
-#     Name = "${var.stuart_assessment4}-${each.value.team_name}-endpoint"
-#     Team = each.value.team_name
-#   }
-# }
+  tags = {
+    Name = "${var.stuart_assessment4}-${each.value.team_name}-endpoint"
+    Team = each.value.team_name
+  }
+}

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: team-forecasting-quota  # Use team-forecasting-quota so later commands can find this quota.
+  namespace: team-forecasting  # Use team-forecasting so the quota applies to this team's namespace.
+spec:
+  hard:
+    requests.cpu: "2"  # Use "2" to cap total requested CPU at 2 cores.
+    requests.memory: 4Gi  # Use 4Gi to cap total requested memory.
+    limits.cpu: "4"  # Use "4" to cap total CPU limits at 4 cores.
+    limits.memory: 8Gi  # Use 8Gi to cap total memory limits.
+    pods: "10"  # Use "10" to cap the namespace at 10 pods.
