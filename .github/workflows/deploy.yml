@@ -85,6 +85,11 @@ jobs:
         working-directory: ./terraform
         run: terraform validate
 
+       
+      - name: Terraform Plan
+        working-directory: ./terraform
+        run: terraform plan
+
       - name: Ensure SageMaker Model Artifacts Exist in S3
         run: |
           # Create temporary empty model tarball
@@ -96,10 +101,6 @@ jobs:
           done
 
           rm model.tar.gz  
-
-      - name: Terraform Plan
-        working-directory: ./terraform
-        run: terraform plan
 
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
