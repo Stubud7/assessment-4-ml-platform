@@ -85,6 +85,18 @@ jobs:
         working-directory: ./terraform
         run: terraform validate
 
+      - name: Ensure SageMaker Model Artifacts Exist in S3
+        run: |
+          # Create temporary empty model tarball
+          tar -czvf model.tar.gz --files-from /dev/null
+
+          # Upload to S3 if not already present
+          for model in recommendations fraud forecasting; do
+            aws s3 cp model.tar.gz s3://stuart-assessment4-ml-artifacts/$model/model.tar.gz --no-clobber || true
+          done
+
+          rm model.tar.gz  
+
       - name: Terraform Plan
         working-directory: ./terraform
         run: terraform plan

@@ -24,6 +24,8 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
 
 resource "aws_s3_bucket_public_access_block" "frontend_public_access" {
   bucket = aws_s3_bucket.frontend.id
+  # Force Terraform to wait until the S3 bucket is fully created in AWS
+  depends_on = [aws_s3_bucket.frontend]
 
   block_public_acls       = false
   block_public_policy     = false

@@ -37,6 +37,13 @@ resource "aws_sagemaker_model" "team_models" {
     Name = "${var.stuart_assessment4}-${each.value.team_name}-model"
     Team = each.value.team_name
   }
+
+  # Explicit dependencies to resolve race conditions and undeclared errors
+  depends_on = [
+    aws_s3_bucket.model_artifacts,
+    aws_iam_role_policy_attachment.sagemaker_s3_access,
+    aws_iam_role_policy.sagemaker_s3_inline_policy
+  ]
 }
 
 # 2. Create Endpoint Configurations for all 3 teams
