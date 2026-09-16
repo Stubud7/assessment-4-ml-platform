@@ -22,7 +22,7 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "frontend" {
+resource "aws_s3_bucket_public_access_block" "frontend_public_access" {
   bucket = aws_s3_bucket.frontend.id
 
   block_public_acls       = false
@@ -33,7 +33,7 @@ resource "aws_s3_bucket_public_access_block" "frontend" {
 
 resource "aws_s3_bucket_policy" "allow_public_read" {
   bucket     = aws_s3_bucket.frontend.id
-  depends_on = [aws_s3_bucket_public_access_block.frontend]
+  depends_on = [aws_s3_bucket_public_access_block.frontend_public_access]
 
   policy = jsonencode({
     Version = "2012-10-17"
