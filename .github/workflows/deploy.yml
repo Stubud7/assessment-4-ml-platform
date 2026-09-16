@@ -107,6 +107,37 @@ jobs:
         working-directory: ./terraform
         run: terraform apply -auto-approve
 
+      # 1. Apply Infrastructure and SageMaker Models
+      - name: Terraform Apply Infrastructure & Models
+        run: |
+          cd terraform
+          terraform apply -auto-approve
+
+      # 2. Trigger Endpoint Creation Asynchronously
+      - name: Trigger SageMaker Endpoints Asynchronously
+        run: |
+          teams=("fraud-detection" "recommendations" "forecasting")
+
+          for team in "${teams[@]}"; do
+            ENDPOINT_NAME="stuart-assessment4-${team}-endpoint"
+            CONFIG_NAME="stuart-assessment4-${team}-config"
+
+            echo "Triggering asynchronous creation for: ${ENDPOINT_NAME}"
+
+            # Kick off creation without waiting for completion
+            aws sagemaker create-endpoint \
+              --endpoint-name "$ENDPOINT_NAME" \
+              --endpoint-config-name "$CONFIG_NAME" \
+              --tags Key=Name,Value="$ENDPOINT_NAME" Key=Team,Value="$team" || true
+          done
+
+      # 3. Log Initial Status and Finish Job
+      - name: Check Initial Endpoint Status
+        run: |
+          aws sagemaker list-endpoints --name-contains "stuart-assessment4"
+
+
+
 
       # -- Build and Push Team Microservices --
       - name: Set up Docker Buildx
