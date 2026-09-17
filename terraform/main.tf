@@ -6,6 +6,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.4"
+    }
   }
 
   backend "s3" {
@@ -61,8 +65,8 @@ output "sagemaker_team_endpoints" {
       team_name     = local.teams[team_key].team_name
       endpoint_name = endpoint.name
       endpoint_arn  = endpoint.arn
-      }
     }
+  }
 }
 
 # EC2 Backend Instance Public IP (for calling the FastAPI services)
