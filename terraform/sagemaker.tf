@@ -1,5 +1,83 @@
 # assessment4- sagemeaker.tf for endpoints
 
+
+# ==============================================================================
+# 1. GENERATE MODEL TARBALL (In-Memory Archive Creation)
+# ==============================================================================
+data "archive_file" "model_tarball" {
+  type        = "tar.gz"
+  output_path = "${path.module}/generated_model.tar.gz"
+
+  source {
+    content  = "# Real SageMaker Model Artifact Placeholder\nversion = 1.0\nstatus = ready\n"
+    filename = "model.bin"
+  }
+}
+
+# ==============================================================================
+# 2. LOCALS & TEAM DEFINITIONS
+# ==============================================================================
+locals {
+  teams = {
+    fraud = {
+      team_name  = "fraud-detection"
+      image_uri  = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-xgboost:1.5-1"
+      model_path = "s3://${aws_s3_bucket.model_artifacts.bucket}/fraud/model.tar.gz"
+    }
+    recommendations = {
+      team_name  = "recommendations"
+      image_uri  = "683313688378.dkr.ecr.us-east-1.amazonaws.com/factorization-machines:1"
+      model_path = "s3://${aws_s3_bucket.model_artifacts.bucket}/recommendations/model.tar.gz"
+    }
+    forecasting = {
+      team_name  = "forecasting"
+      image_uri  = "683313688378.dkr.ecr.us-east-1.amazonaws.com/linear-learner:1"
+      model_path = "s3://${aws_s3_bucket.model_artifacts.bucket}/forecasting/model.tar.gz"
+    }
+  }
+}
+
+# ==============================================================================
+# 3. UPLOAD ARCHIVES TO S3 (Triggers before SageMaker Model creation)
+# ==============================================================================
+resource "aws_s3_object" "model_artifacts" {
+  for_each = local.teams
+
+  bucket = aws_s3_bucket.model_artifacts.id
+  key    = "${each.key}/model.tar.gz"
+  source = data.archive_file.model_tarball.output_path
+  etag   = data.archive_file.model_tarball.output_md5
+
+  depends_on = [
+    aws_s3_bucket.model_artifacts
+  ]
+}
+
+# ==============================================================================
+# 4. CREATE SAGEMAKER MODELS
+# ==============================================================================
+resource "aws_sagemaker_model" "team_models" {
+  for_each           = local.teams
+  name               = "${var.stuart_assessment4}-${each.value.team_name}-model"
+  execution_role_arn = aws_iam_role.sagemaker_execution_role.arn
+
+  primary_container {
+    image          = each.value.image_uri
+    model_data_url = each.value.model_path
+  }
+
+  tags = {
+    Name = "${var.stuart_assessment4}-${each.value.team_name}-model"
+    Team = each.value.team_name
+  }
+
+  # HARD DEPENDENCY: SageMaker will NOT attempt API validation until the S3 object upload is complete
+  depends_on = [
+    aws_s3_object.model_artifacts,
+    aws_iam_role_policy_attachment.sagemaker_s3_access,
+    aws_iam_role_policy.sagemaker_s3_inline_policy
+  ]
+}
 # Local map defining the 3 team models and container images
 locals {
   teams = {
@@ -22,6 +100,50 @@ locals {
   }
 }
 
+ 
+ 
+
+# ==============================================================================
+# 3. UPLOAD ARCHIVES TO S3 (Triggers before SageMaker Model creation)
+# ==============================================================================
+resource "aws_s3_object" "model_artifacts" {
+  for_each = local.teams
+
+  bucket = aws_s3_bucket.model_artifacts.id
+  key    = "${each.key}/model.tar.gz"
+  source = data.archive_file.model_tarball.output_path
+  etag   = data.archive_file.model_tarball.output_md5
+
+  depends_on = [
+    aws_s3_bucket.model_artifacts
+  ]
+}
+
+# ==============================================================================
+# 4. CREATE SAGEMAKER MODELS
+# ==============================================================================
+resource "aws_sagemaker_model" "team_models" {
+  for_each           = local.teams
+  name               = "${var.stuart_assessment4}-${each.value.team_name}-model"
+  execution_role_arn = aws_iam_role.sagemaker_execution_role.arn
+
+  primary_container {
+    image          = each.value.image_uri
+    model_data_url = each.value.model_path
+  }
+
+  tags = {
+    Name = "${var.stuart_assessment4}-${each.value.team_name}-model"
+    Team = each.value.team_name
+  }
+
+  # HARD DEPENDENCY: SageMaker will NOT attempt API validation until the S3 object upload is complete
+  depends_on = [
+    aws_s3_object.model_artifacts,
+    aws_iam_role_policy_attachment.sagemaker_s3_access,
+    aws_iam_role_policy.sagemaker_s3_inline_policy
+  ]
+}
 # 1. Create SageMaker Models for all 3 teams
 resource "aws_sagemaker_model" "team_models" {
   for_each           = local.teams
