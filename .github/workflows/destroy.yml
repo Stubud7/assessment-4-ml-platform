@@ -20,6 +20,21 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
+      - name: Clean Up SageMaker Endpoints and Endpoint Configurations
+        run: |
+          teams=("fraud-detection" "recommendations" "forecasting")
+
+          for team in "${teams[@]}"; do
+            ENDPOINT_NAME="stuart-assessment4-${team}-endpoint"
+            CONFIG_NAME="stuart-assessment4-${team}-config"
+
+            echo "Deleting Endpoint: ${ENDPOINT_NAME}"
+            aws sagemaker delete-endpoint --endpoint-name "$ENDPOINT_NAME" || true
+
+            echo "Deleting Endpoint Configuration: ${CONFIG_NAME}"
+            aws sagemaker delete-endpoint-config --endpoint-config-name "$CONFIG_NAME" || true
+          done    
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v2
         with:
