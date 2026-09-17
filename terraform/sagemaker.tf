@@ -26,12 +26,12 @@ locals {
     }
     recommendations = {
       team_name  = "recommendations"
-      image_uri  = "683313688378.dkr.ecr.us-east-1.amazonaws.com/factorization-machines:1"
+      image_uri  = "382416733822.dkr.ecr.us-east-1.amazonaws.com/factorization-machines:1"
       model_path = "s3://${aws_s3_bucket.model_artifacts.bucket}/recommendations/model.tar.gz"
     }
     forecasting = {
       team_name  = "forecasting"
-      image_uri  = "683313688378.dkr.ecr.us-east-1.amazonaws.com/linear-learner:1"
+      image_uri  = "382416733822.dkr.ecr.us-east-1.amazonaws.com/linear-learner:1"
       model_path = "s3://${aws_s3_bucket.model_artifacts.bucket}/forecasting/model.tar.gz"
     }
   }
