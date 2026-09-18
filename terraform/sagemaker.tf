@@ -73,7 +73,7 @@ resource "aws_sagemaker_endpoint_configuration" "team_configs" {
   }
 }
 
-# 6. Provision 3 Live Real-Time SageMaker Endpoints
+# 6. Provision 3 Live Real-Time SageMaker Endpoints / Update aws_sagemaker_endpoint
 resource "aws_sagemaker_endpoint" "team_endpoints" {
   for_each = var.teams
 

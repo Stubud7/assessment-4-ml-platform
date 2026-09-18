@@ -82,4 +82,27 @@ variable "project_name" {
 }
 
 
- 
+variable "teams" {
+  description = "Map of team configurations for SageMaker endpoints"
+  type = map(object({
+    team_name = string
+  }))
+  default = {
+    "fraud" = {
+      team_name = "team-fraud-detection"
+    }
+    "recommendations" = {
+      team_name = "team-recommendations"
+    }
+    "forecasting" = {
+      team_name = "team-forecasting"
+    }
+  }
+} 
+
+variable "algorithm_image" {
+  description = "Docker image URI for the SageMaker built-in algorithm container"
+  type        = string
+  # Default Scikit-Learn / XGBoost built-in algorithm container for us-east-1
+  default     = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3"
+}
