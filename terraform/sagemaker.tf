@@ -29,24 +29,24 @@ locals {
  
 
 # ==============================================================================
-# 4. CREATE SAGEMAKER MODELS
-# ==============================================================================
+# 1. Update aws_sagemaker_model
 resource "aws_sagemaker_model" "team_models" {
-  for_each           = local.teams
-  name               = "${var.stuart_assessment4}-${each.value.team_name}-model"
+  for_each = var.teams
+
+  name               = "stuart-assessment4-${each.key}-model"
   execution_role_arn = aws_iam_role.sagemaker_execution_role.arn
 
   primary_container {
-    image          = each.value.image_uri
-    model_data_url = each.value.model_path
+    image          = var.algorithm_image
+    model_data_url = "s3://${aws_s3_bucket.model_artifacts.id}/${each.key}/model.tar.gz"
   }
 
   tags = {
-    Name = "${var.stuart_assessment4}-${each.value.team_name}-model"
+    Name = "stuart-assessment4-${each.key}-model"
     Team = each.value.team_name
   }
 
-  # HARD DEPENDENCY: SageMaker will NOT attempt API validation until the S3 object upload is complete
+  # HARD DEPENDENCY: Ensure S3 objects and IAM policies exist BEFORE model creation
   depends_on = [
     aws_s3_object.model_artifacts,
     aws_iam_role_policy_attachment.sagemaker_s3_access,
@@ -75,12 +75,14 @@ resource "aws_sagemaker_endpoint_configuration" "team_configs" {
 
 # 6. Provision 3 Live Real-Time SageMaker Endpoints
 resource "aws_sagemaker_endpoint" "team_endpoints" {
-  for_each             = local.teams
-  name                 = "${var.stuart_assessment4}-${each.value.team_name}-endpoint"
+  for_each = var.teams
+
+  name                 = "stuart-assessment4-${each.key}-endpoint"
   endpoint_config_name = aws_sagemaker_endpoint_configuration.team_configs[each.key].name
 
-  tags = {
-    Name = "${var.stuart_assessment4}-${each.value.team_name}-endpoint"
-    Team = each.value.team_name
-  }
+  # FORCE TERRAFORM TO WAIT FOR MODEL & CONFIG CREATION
+  depends_on = [
+    aws_sagemaker_model.team_models,
+    aws_sagemaker_endpoint_configuration.team_configs
+  ]
 }
