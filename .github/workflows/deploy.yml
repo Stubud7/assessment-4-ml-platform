@@ -86,32 +86,11 @@ jobs:
         run: terraform validate
 
        
-      - name: Terraform Plan
-        working-directory: ./terraform
-        run: terraform plan
-
-      - name: Ensure SageMaker Model Artifacts Exist in S3
-        run: |
-          # Create temporary empty model tarball
-          tar -czvf model.tar.gz --files-from /dev/null
-
-          # Upload to S3 if not already present
-          for model in recommendations fraud forecasting; do
-            aws s3 cp model.tar.gz s3://stuart-assessment4-ml-artifacts/$model/model.tar.gz --no-clobber || true
-          done
-
-          rm model.tar.gz  
-
-      - name: Terraform Apply
+      - name: Terraform Apply Infrastructure & Models
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         working-directory: ./terraform
         run: terraform apply -auto-approve
 
-      # 1. Apply Infrastructure and SageMaker Models
-      - name: Terraform Apply Infrastructure & Models
-        run: |
-          cd terraform
-          terraform apply -auto-approve
 
       # 2. Trigger Endpoint Creation Asynchronously
       - name: Trigger SageMaker Endpoints Asynchronously
@@ -197,7 +176,7 @@ jobs:
             kubectl create secret docker-registry ghcr-secret \
               --namespace="$ns" \
               --docker-server=ghcr.io \
-              --docker-username="${{ github.actor }}" | tr '[:upper:]' '[:lower:]'
+              --docker-username="${{ github.actor }}" \
               --docker-password="${{ secrets.GHCR_TOKEN }}" \
               --dry-run=client -o yaml | kubectl apply -f -
 
