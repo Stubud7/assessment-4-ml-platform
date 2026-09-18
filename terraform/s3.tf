@@ -95,12 +95,4 @@ data "archive_file" "model_tarball" {
   output_path = "${path.module}/model.tar.gz"
 }
 
-# 3. Upload model.tar.gz to each team prefix in S3 automatically
-resource "aws_s3_object" "model_artifacts" {
-  for_each = toset(["fraud", "recommendations", "forecasting"])
-
-  bucket = aws_s3_bucket.model_artifacts.id
-  key    = "${each.value}/model.tar.gz"
-  source = data.archive_file.model_tarball.output_path
-  etag   = data.archive_file.model_tarball.output_md5
-}
+ 
