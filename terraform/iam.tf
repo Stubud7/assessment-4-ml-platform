@@ -1,6 +1,9 @@
 # assessment4 iam.tf
 
-# EC2 Role & Policy
+# ==============================================================================
+# 1. EC2 / EKS INSTANCE ROLE & POLICIES
+# ==============================================================================
+
 resource "aws_iam_role" "ec2_role" {
   name = "${var.stuart_assessment4}-ec2-role"
 
@@ -16,6 +19,7 @@ resource "aws_iam_role" "ec2_role" {
   })
 }
 
+# Attach S3 Access to EC2
 resource "aws_iam_role_policy_attachment" "ec2_s3_access" {
   role       = aws_iam_role.ec2_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
@@ -33,8 +37,16 @@ resource "aws_iam_instance_profile" "ec2_profile" {
   role = aws_iam_role.ec2_role.name
 }
 
+# Optional: Keep DynamoDB Access only if your microservice requires it
+resource "aws_iam_role_policy_attachment" "ec2_dynamodb" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+}
 
+
+# ==============================================================================
 # 2. SAGEMAKER EXECUTION ROLE & POLICIES
+# ==============================================================================
 
 resource "aws_iam_role" "sagemaker_execution_role" {
   name = "${var.stuart_assessment4}-sagemaker-execution-role"
@@ -51,25 +63,25 @@ resource "aws_iam_role" "sagemaker_execution_role" {
   })
 }
 
-# Attach Managed SageMaker Policy (Gives S3 & ECR access needed by SageMaker)
+# Managed Policy: Full SageMaker operations
 resource "aws_iam_role_policy_attachment" "sagemaker_full_access" {
   role       = aws_iam_role.sagemaker_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
 }
 
-# Attach Direct S3 Full Access to SageMaker Role
+# Managed Policy: S3 Access for fetching model tarballs
 resource "aws_iam_role_policy_attachment" "sagemaker_s3_access" {
   role       = aws_iam_role.sagemaker_execution_role.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 
-# Confirm that ec2 dynamodb iam role is required
-resource "aws_iam_role_policy_attachment" "ec2_dynamodb" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+# Managed Policy: Container Registry Read Access for pulling algorithm images
+resource "aws_iam_role_policy_attachment" "sagemaker_ecr_access" {
+  role       = aws_iam_role.sagemaker_execution_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
-# SageMaker S3 Access Policy Document
+# Dynamic S3 Inline Policy for model artifacts bucket
 data "aws_iam_policy_document" "sagemaker_s3_policy" {
   statement {
     sid    = "AllowSageMakerS3Access"
@@ -79,13 +91,12 @@ data "aws_iam_policy_document" "sagemaker_s3_policy" {
       "s3:ListBucket"
     ]
     resources = [
-      "arn:aws:s3:::stuart-assessment4-ml-artifacts",
-      "arn:aws:s3:::stuart-assessment4-ml-artifacts/*"
+      aws_s3_bucket.model_artifacts.arn,
+      "${aws_s3_bucket.model_artifacts.arn}/*"
     ]
   }
 }
 
-# Attach Policy to SageMaker Role
 resource "aws_iam_role_policy" "sagemaker_s3_inline_policy" {
   name   = "sagemaker-s3-artifacts-policy"
   role   = aws_iam_role.sagemaker_execution_role.id

@@ -52,6 +52,7 @@ resource "aws_s3_bucket_policy" "allow_public_read" {
 }
 
 # 2. SAGEMAKER / ML MODEL ARTIFACTS BUCKET
+# 1. The S3 Bucket
 resource "aws_s3_bucket" "model_artifacts" {
   bucket        = var.model_artifacts_bucket_name
   force_destroy = true
@@ -59,6 +60,16 @@ resource "aws_s3_bucket" "model_artifacts" {
   tags = {
     Name = var.model_artifacts_bucket_name
   }
+}
+
+# 2. The S3 Objects (Uploaded per team)
+resource "aws_s3_object" "model_artifacts" {
+  for_each = var.teams
+
+  bucket = aws_s3_bucket.model_artifacts.id
+  key    = "${each.key}/model.tar.gz"
+  source = data.archive_file.model_tarball.output_path
+  etag   = data.archive_file.model_tarball.output_md5
 }
 
 # Keep ML artifacts private
