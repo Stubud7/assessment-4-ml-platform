@@ -1,18 +1,7 @@
 # assessment4- sagemeaker.tf for endpoints
 
 
-# ==============================================================================
-# 1. GENERATE MODEL TARBALL (In-Memory Archive Creation)
-# ==============================================================================
-data "archive_file" "model_tarball" {
-  type        = "tar.gz"
-  output_path = "${path.module}/generated_model.tar.gz"
-
-  source {
-    content  = "# Real SageMaker Model Artifact Placeholder\nversion = 1.0\nstatus = ready\n"
-    filename = "model.bin"
-  }
-}
+# 
 
 # ==============================================================================
 # 2. LOCALS & TEAM DEFINITIONS
@@ -37,21 +26,7 @@ locals {
   }
 }
 
-# ==============================================================================
-# 3. UPLOAD ARCHIVES TO S3 (Triggers before SageMaker Model creation)
-# ==============================================================================
-resource "aws_s3_object" "model_artifacts" {
-  for_each = local.teams
-
-  bucket = aws_s3_bucket.model_artifacts.id
-  key    = "${each.key}/model.tar.gz"
-  source = data.archive_file.model_tarball.output_path
-  etag   = data.archive_file.model_tarball.output_md5
-
-  depends_on = [
-    aws_s3_bucket.model_artifacts
-  ]
-}
+ 
 
 # ==============================================================================
 # 4. CREATE SAGEMAKER MODELS
