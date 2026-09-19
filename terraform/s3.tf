@@ -79,20 +79,26 @@ resource "aws_s3_bucket_public_access_block" "model_artifacts" {
   restrict_public_buckets = true
 }
 
+ 
+locals {
+  # Base64 string for an empty, valid .zip archive
+  empty_zip_b64 = "UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA=="
+}
+
 # 3. GENERATE DUMMY MODEL ARTIFACTS & ARCHIVES
 resource "local_file" "dummy_xgboost" {
-  filename = "${path.module}/dummy_models/fraud/xgboost-model"
-  content  = "dummy xgboost binary model payload"
+  filename       = "${path.module}/dummy_models/fraud/model.zip"
+  content_base64 = local.empty_zip_b64
 }
 
 resource "local_file" "dummy_recommendations" {
-  filename = "${path.module}/dummy_models/recommendations/model.algo"
-  content  = "dummy factorization machine payload"
+  filename       = "${path.module}/dummy_models/recommendations/model.zip"
+  content_base64 = local.empty_zip_b64
 }
 
 resource "local_file" "dummy_forecasting" {
-  filename = "${path.module}/dummy_models/forecasting/model.algo"
-  content  = "dummy linear learner payload"
+  filename       = "${path.module}/dummy_models/forecasting/model.zip"
+  content_base64 = local.empty_zip_b64
 }
 
 data "archive_file" "model_tarball" {
