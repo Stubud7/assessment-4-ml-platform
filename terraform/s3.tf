@@ -23,8 +23,7 @@ resource "aws_s3_bucket_website_configuration" "frontend" {
 }
 
 resource "aws_s3_bucket_public_access_block" "frontend_public_access" {
-  bucket = aws_s3_bucket.frontend.id
-  # Force Terraform to wait until the S3 bucket is fully created in AWS
+  bucket     = aws_s3_bucket.frontend.id
   depends_on = [aws_s3_bucket.frontend]
 
   block_public_acls       = false
@@ -52,7 +51,6 @@ resource "aws_s3_bucket_policy" "allow_public_read" {
 }
 
 # 2. SAGEMAKER / ML MODEL ARTIFACTS BUCKET
-# 1. The S3 Bucket
 resource "aws_s3_bucket" "model_artifacts" {
   bucket        = var.model_artifacts_bucket_name
   force_destroy = true
@@ -62,17 +60,16 @@ resource "aws_s3_bucket" "model_artifacts" {
   }
 }
 
-# 2. The S3 Objects (Uploaded per team)
+# Upload per-team tarballs to S3
 resource "aws_s3_object" "model_artifacts" {
   for_each = var.teams
 
   bucket = aws_s3_bucket.model_artifacts.id
   key    = "${each.key}/model.tar.gz"
-  source = data.archive_file.model_tarball.output_path
-  etag   = data.archive_file.model_tarball.output_md5
+  source = data.archive_file.model_tarball[each.key].output_path
+  etag   = data.archive_file.model_tarball[each.key].output_md5
 }
 
-# Keep ML artifacts private
 resource "aws_s3_bucket_public_access_block" "model_artifacts" {
   bucket = aws_s3_bucket.model_artifacts.id
 
@@ -82,17 +79,31 @@ resource "aws_s3_bucket_public_access_block" "model_artifacts" {
   restrict_public_buckets = true
 }
 
-# 1. Create dummy model file for container ping health checks
-resource "local_file" "dummy_model" {
-  filename = "${path.module}/dummy_model/model_algo-1"
-  content  = "{\"status\": \"healthy\"}"
+# 3. GENERATE DUMMY MODEL ARTIFACTS & ARCHIVES
+resource "local_file" "dummy_xgboost" {
+  filename = "${path.module}/dummy_models/fraud/xgboost-model"
+  content  = "dummy xgboost binary model payload"
 }
 
-# 2. Compress dummy file into model.tar.gz
+resource "local_file" "dummy_recommendations" {
+  filename = "${path.module}/dummy_models/recommendations/model.algo"
+  content  = "dummy factorization machine payload"
+}
+
+resource "local_file" "dummy_forecasting" {
+  filename = "${path.module}/dummy_models/forecasting/model.algo"
+  content  = "dummy linear learner payload"
+}
+
 data "archive_file" "model_tarball" {
+  for_each    = var.teams
   type        = "tar.gz"
-  source_file = local_file.dummy_model.filename
-  output_path = "${path.module}/model.tar.gz"
-}
+  output_path = "${path.module}/${each.key}_model.tar.gz"
+  source_dir  = "${path.module}/dummy_models/${each.key}"
 
- 
+  depends_on = [
+    local_file.dummy_xgboost,
+    local_file.dummy_recommendations,
+    local_file.dummy_forecasting
+  ]
+}
