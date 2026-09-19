@@ -31,15 +31,15 @@ locals {
 # ==============================================================================
 # 1. Update aws_sagemaker_model
 resource "aws_sagemaker_model" "team_models" {
-  for_each = var.teams
-
-  name               = "stuart-assessment4-${each.key}-model"
+  for_each           = local.teams
+  name               = "${each.value.team_name}-model"
   execution_role_arn = aws_iam_role.sagemaker_execution_role.arn
 
   primary_container {
-    image          = var.algorithm_image
-    model_data_url = "s3://${aws_s3_bucket.model_artifacts.id}/${each.key}/model.tar.gz"
+    image          = each.value.image_uri
+    model_data_url = each.value.model_path
   }
+
 
   tags = {
     Name = "stuart-assessment4-${each.key}-model"
@@ -58,7 +58,7 @@ resource "aws_sagemaker_model" "team_models" {
 # 5. Create Endpoint Configurations for all 3 teams
 resource "aws_sagemaker_endpoint_configuration" "team_configs" {
   for_each = local.teams
-  name     = "${var.stuart_assessment4}-${each.value.team_name}-config"
+  name     = "${each.value.team_name}-config"
 
   production_variants {
     variant_name           = "AllTraffic"
@@ -75,9 +75,8 @@ resource "aws_sagemaker_endpoint_configuration" "team_configs" {
 
 # 6. Provision 3 Live Real-Time SageMaker Endpoints / Update aws_sagemaker_endpoint
 resource "aws_sagemaker_endpoint" "team_endpoints" {
-  for_each = var.teams
-
-  name                 = "stuart-assessment4-${each.key}-endpoint"
+  for_each             = local.teams
+  name                 = "${each.value.team_name}-endpoint"
   endpoint_config_name = aws_sagemaker_endpoint_configuration.team_configs[each.key].name
 
   # FORCE TERRAFORM TO WAIT FOR MODEL & CONFIG CREATION
