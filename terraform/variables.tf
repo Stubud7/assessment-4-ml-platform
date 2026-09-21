@@ -98,11 +98,11 @@ variable "teams" {
       team_name = "team-forecasting"
     }
   }
-} 
+}
 
 variable "algorithm_image" {
   description = "Docker image URI for the SageMaker built-in algorithm container"
   type        = string
   # Default Scikit-Learn / XGBoost built-in algorithm container for us-east-1
-  default     = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3"
+  default = "683313688378.dkr.ecr.us-east-1.amazonaws.com/sagemaker-scikit-learn:1.2-1-cpu-py3"
 }

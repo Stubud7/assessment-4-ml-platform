@@ -85,36 +85,27 @@ jobs:
         working-directory: ./terraform
         run: terraform validate
 
+      - name: Validate model artifacts
+        run: |
+          tar -tzf terraform/models/fraud/model.tar.gz | grep -qx xgboost-model
+          for t in forecasting recommendations; do
+            tar -tzf terraform/models/$t/model.tar.gz | grep -q model_algo-1
+        done
+
        
       - name: Terraform Apply Infrastructure & Models
         if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
         working-directory: ./terraform
         run: terraform apply -auto-approve
 
-
-      # 2. Trigger Endpoint Creation Asynchronously
-      - name: Trigger SageMaker Endpoints Asynchronously
+ 
+      - name: Check endpoint status
+        if: always()
         run: |
-          teams=("fraud-detection" "recommendations" "forecasting")
-
-          for team in "${teams[@]}"; do
-            ENDPOINT_NAME="stuart-assessment4-${team}-endpoint"
-            CONFIG_NAME="stuart-assessment4-${team}-config"
-
-            echo "Triggering asynchronous creation for: ${ENDPOINT_NAME}"
-
-            # Kick off creation without waiting for completion
-            aws sagemaker create-endpoint \
-              --endpoint-name "$ENDPOINT_NAME" \
-              --endpoint-config-name "$CONFIG_NAME" \
-              --tags Key=Name,Value="$ENDPOINT_NAME" Key=Team,Value="$team" || true
-          done
-
-      # 3. Log Initial Status and Finish Job
-      - name: Check Initial Endpoint Status
-        run: |
-          aws sagemaker list-endpoints --name-contains "stuart-assessment4"
-
+        for name in fraud-detection recommendations forecasting; do
+        aws sagemaker describe-endpoint --endpoint-name "${name}-endpoint" \
+        --query '[EndpointName,EndpointStatus,FailureReason]' --output text
+       done
 
 
 

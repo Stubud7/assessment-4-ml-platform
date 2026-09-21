@@ -60,15 +60,6 @@ resource "aws_s3_bucket" "model_artifacts" {
   }
 }
 
-# Upload per-team tarballs to S3
-resource "aws_s3_object" "model_artifacts" {
-  for_each = var.teams
-
-  bucket = aws_s3_bucket.model_artifacts.id
-  key    = "${each.key}/model.tar.gz"
-  source = data.archive_file.model_tarball[each.key].output_path
-  etag   = data.archive_file.model_tarball[each.key].output_md5
-}
 
 resource "aws_s3_bucket_public_access_block" "model_artifacts" {
   bucket = aws_s3_bucket.model_artifacts.id
@@ -79,37 +70,12 @@ resource "aws_s3_bucket_public_access_block" "model_artifacts" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_object" "model_artifacts" {
+  for_each = toset(keys(local.teams)) # same team keys as sagemaker.tf
+
+  bucket = aws_s3_bucket.model_artifacts.id
+  key    = "${each.key}/model.tar.gz"
+  source = "${path.module}/models/${each.key}/model.tar.gz"
+  etag   = filemd5("${path.module}/models/${each.key}/model.tar.gz")
+}
  
-locals {
-  # Base64 string for an empty, valid .zip archive
-  empty_zip_b64 = "UEsFBgAAAAAAAAAAAAAAAAAAAAAAAA=="
-}
-
-# 3. GENERATE DUMMY MODEL ARTIFACTS & ARCHIVES
-resource "local_file" "dummy_xgboost" {
-  filename       = "${path.module}/dummy_models/fraud/model.zip"
-  content_base64 = local.empty_zip_b64
-}
-
-resource "local_file" "dummy_recommendations" {
-  filename       = "${path.module}/dummy_models/recommendations/model.zip"
-  content_base64 = local.empty_zip_b64
-}
-
-resource "local_file" "dummy_forecasting" {
-  filename       = "${path.module}/dummy_models/forecasting/model.zip"
-  content_base64 = local.empty_zip_b64
-}
-
-data "archive_file" "model_tarball" {
-  for_each    = var.teams
-  type        = "tar.gz"
-  output_path = "${path.module}/${each.key}_model.tar.gz"
-  source_dir  = "${path.module}/dummy_models/${each.key}"
-
-  depends_on = [
-    local_file.dummy_xgboost,
-    local_file.dummy_recommendations,
-    local_file.dummy_forecasting
-  ]
-}

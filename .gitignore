@@ -15,3 +15,5 @@ ollama-models/
 Thumbs.db
 .vscode/
 .idea/" > .gitignore
+*.tar.gz
+*.joblib
