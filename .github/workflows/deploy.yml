@@ -90,7 +90,7 @@ jobs:
           tar -tzf terraform/models/fraud/model.tar.gz | grep -qx xgboost-model
           for t in forecasting recommendations; do
             tar -tzf terraform/models/$t/model.tar.gz | grep -q model_algo-1
-        done
+          done
 
        
       - name: Terraform Apply Infrastructure & Models
@@ -102,10 +102,10 @@ jobs:
       - name: Check endpoint status
         if: always()
         run: |
-        for name in fraud-detection recommendations forecasting; do
-        aws sagemaker describe-endpoint --endpoint-name "${name}-endpoint" \
-        --query '[EndpointName,EndpointStatus,FailureReason]' --output text
-       done
+          for name in fraud-detection recommendations forecasting; do
+            aws sagemaker describe-endpoint --endpoint-name "${name}-endpoint" \
+              --query '[EndpointName,EndpointStatus,FailureReason]' --output text
+          done
 
 
 
