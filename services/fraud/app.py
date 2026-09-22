@@ -6,6 +6,7 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.responses import JSONResponse
+from typing import Optional
 
 app = FastAPI()
 
@@ -54,7 +55,7 @@ def ready():
 
 
 @app.post("/predict")
-def predict(payload: dict, x_target_variant: str | None = Header(default=None)):
+def predict(payload: dict, x_target_variant: Optional[str] = Header(default=None)):
     if not ENDPOINT_NAME:
         raise HTTPException(status_code=503, detail="ENDPOINT_NAME not set")
 

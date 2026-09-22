@@ -26,6 +26,15 @@ resource "aws_instance" "backend" {
     sudo systemctl start docker
     sudo systemctl enable docker
     sudo usermod -aG docker ec2-user
+
+    # Install Docker Compose plugin
+    sudo dnf install -y docker-compose-plugin
+
+    # Clone repo and launch Gateway + Dashboard containers
+    cd /home/ec2-user
+    git clone https://github.com/stubud7/assessment-4-ml-platform.git app
+    cd app
+    docker compose up -d --build
 EOF
 
   tags = {

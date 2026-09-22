@@ -1,6 +1,7 @@
 import os
 import httpx
 from fastapi import FastAPI, Header, HTTPException, Request, Response, status
+from typing import Optional
 
 app = FastAPI(title="Multi-Endpoint AI Gateway")
 
@@ -49,7 +50,7 @@ async def ready():
 async def proxy_predict(
     team: str,
     payload: dict,
-    x_target_variant: str | None = Header(default=None),
+    x_target_variant: Optional[str] = Header(default=None),
 ):
     """
     Single entry-point proxy routing requests to team services based on URL path.
