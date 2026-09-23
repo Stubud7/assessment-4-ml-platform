@@ -200,3 +200,9 @@ jobs:
           
           echo "=== Services and Endpoints ==="
           kubectl get svc,ep -n team-example
+
+      - name: Verify EC2 Gateway Health
+        run: |
+          BACKEND_IP=$(cd terraform && terraform output -raw backend_public_ip)
+          echo "Checking EC2 Gateway at http://${BACKEND_IP}:8000/health..."
+          curl --retry 10 --retry-delay 5 --retry-connrefused http://${BACKEND_IP}:8000/health    
