@@ -11,10 +11,10 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-data "aws_key_pair" "existing" { 
-  key_name = "stuart2-key" 
-  }
-  
+data "aws_key_pair" "existing" {
+  key_name = "stuart2-key"
+}
+
 
 
 
@@ -27,7 +27,7 @@ resource "aws_instance" "backend" {
   subnet_id              = data.aws_subnet.existing_public.id
   vpc_security_group_ids = [data.aws_security_group.existing_sg.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  key_name = data.aws_key_pair.existing.key_name
+  key_name               = data.aws_key_pair.existing.key_name
 
   user_data = <<-EOF
     #!/bin/bash
