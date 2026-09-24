@@ -29,26 +29,10 @@ resource "aws_instance" "backend" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   key_name               = data.aws_key_pair.existing.key_name
 
-  user_data = <<-EOF
-    #!/bin/bash
-    exec > /var/log/user_data.log 2>&1
-    set -x
-
-    sudo dnf update -y
-    sudo dnf install -y git docker docker-compose-plugin
-    sudo systemctl start docker
-    sudo systemctl enable docker
-    sudo usermod -aG docker ec2-user
-
-    cd /home/ec2-user
-    git clone https://github.com/stubud7/assessment-4-ml-platform.git app
-    cd app
-    
-    # Use sudo here so cloud-init has permission to interact with the Docker socket
-    sudo docker compose up -d --build
-EOF
+  user_data                   = file("${path.module}/scripts/user_data.sh")
+  user_data_replace_on_change = true
 
   tags = {
-    Name = "${var.stuart_assessment4}-backend-server"
+    Name = "stuart-assessment4-backend-server"
   }
 }
