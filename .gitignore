@@ -17,3 +17,5 @@ Thumbs.db
 .idea/" > .gitignore
 *.tar.gz
 *.joblib
+.env*
+!.env.example
